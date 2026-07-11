@@ -7,9 +7,22 @@
  * stdout stays reserved for the MCP protocol.
  */
 
-import "dotenv/config";
+import { fileURLToPath } from "node:url";
+import { dirname, resolve } from "node:path";
+import { config as loadDotenv } from "dotenv";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { loadConfig } from "./config.js";
+
+// Load .env from the project root relative to THIS module (both `dist/` and
+// `src/` sit one level under the root). This makes the server work no matter
+// what working directory the MCP host launches it from, so the credentials can
+// live only in the project's .env — not duplicated into the host config.
+// `quiet: true` is essential: dotenv otherwise prints a banner to STDOUT, which
+// would corrupt the MCP JSON-RPC stream. Nothing but the protocol may touch it.
+loadDotenv({
+  path: resolve(dirname(fileURLToPath(import.meta.url)), "..", ".env"),
+  quiet: true,
+});
 import { createLogger } from "./logger.js";
 import { createApaleoRuntime } from "./apaleo/factory.js";
 import { createServer } from "./server.js";

@@ -13,8 +13,10 @@
  * It prints only non-sensitive information — never your secret or the token.
  */
 
-import "dotenv/config";
+import { config as loadDotenv } from "dotenv";
 import { loadConfig } from "../config.js";
+
+loadDotenv({ quiet: true });
 import { createLogger } from "../logger.js";
 import { createApaleoRuntime } from "../apaleo/factory.js";
 import { ConfigError, ApaleoAuthError, ApaleoApiError } from "../apaleo/errors.js";
