@@ -9,6 +9,7 @@ An unofficial [Model Context Protocol](https://modelcontextprotocol.io) server
 that connects hotel property-management systems to AI assistants like Claude —
 starting with [Apaleo](https://apaleo.com).
 
+[![CI](https://github.com/Mik2503/hospitality-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/Mik2503/hospitality-mcp/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 [![Made with TypeScript](https://img.shields.io/badge/TypeScript-Node.js-3178c6.svg)](https://www.typescriptlang.org/)
 [![MCP](https://img.shields.io/badge/MCP-server-000.svg)](https://modelcontextprotocol.io)
@@ -196,8 +197,9 @@ Known assumptions being refined are tracked in [docs/TODO.md](./docs/TODO.md).
 
 ## 🤝 Contributing
 
-Issues and PRs are welcome — especially new PMS adapters and live-validating the
-write path. Please don't include real credentials in issues, tests, or fixtures.
+Issues and PRs are welcome — especially **new PMS adapters** and live-validating
+the write path. See **[CONTRIBUTING.md](./CONTRIBUTING.md)** to get started, and
+please never include real credentials in issues, tests, or fixtures.
 
 ## 📄 License
 

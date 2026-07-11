@@ -1,0 +1,57 @@
+name: 🐛 Bug report
+description: Something isn't working as expected
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report! **Do not paste credentials, tokens, or `.env`
+        contents** — redact anything sensitive from logs before sharing.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: A clear description of the bug, and what you expected instead.
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: What did you do? Include the prompt/tool call if relevant.
+      placeholder: |
+        1. Configured the server with '...'
+        2. Asked Claude '...'
+        3. Saw '...'
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs
+      description: Paste stderr output. **Redact any secrets/tokens first.**
+      render: shell
+    validations:
+      required: false
+  - type: input
+    id: pms
+    attributes:
+      label: PMS / adapter
+      placeholder: Apaleo
+    validations:
+      required: false
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: OS, Node version, MCP host (Claude Desktop / Claude Code), and version.
+      placeholder: macOS 14, Node 22.5, Claude Desktop
+    validations:
+      required: true
+  - type: checkboxes
+    id: no-secrets
+    attributes:
+      label: Confirmation
+      options:
+        - label: I have removed all credentials/tokens from this report.
+          required: true

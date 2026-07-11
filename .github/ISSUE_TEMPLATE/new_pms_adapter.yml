@@ -1,0 +1,56 @@
+name: 🧩 New PMS adapter
+description: Propose or claim work on an adapter for another PMS
+labels: ["adapter"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Adapters are the best way to contribute! Please skim
+        [docs/ADD_AN_ADAPTER.md](../blob/main/docs/ADD_AN_ADAPTER.md) first.
+  - type: input
+    id: pms-name
+    attributes:
+      label: Which PMS?
+      placeholder: Mews, Cloudbeds, Stayntouch, …
+    validations:
+      required: true
+  - type: input
+    id: api-docs
+    attributes:
+      label: Link to the PMS API documentation
+    validations:
+      required: true
+  - type: dropdown
+    id: sandbox
+    attributes:
+      label: Is there a free/self-serve sandbox with sample data?
+      options:
+        - "Yes — free self-serve sandbox"
+        - "Yes — but requires an account/approval"
+        - "No / unsure"
+    validations:
+      required: true
+  - type: dropdown
+    id: auth
+    attributes:
+      label: Authentication method
+      options:
+        - OAuth2 client credentials
+        - OAuth2 authorization code
+        - API key
+        - Other / unsure
+    validations:
+      required: true
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: Which capabilities do you plan to support?
+      options:
+        - label: Reads (arrivals, reservations, availability, KPIs, housekeeping)
+        - label: Writes (create / modify / cancel)
+  - type: checkboxes
+    id: claim
+    attributes:
+      label: Are you planning to work on this?
+      options:
+        - label: I'd like to implement this adapter myself.
