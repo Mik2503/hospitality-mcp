@@ -83,7 +83,7 @@ KPI tool twice to compare two periods).
 ## ⚡ Quick start
 
 ```bash
-git clone https://github.com/<your-org>/hospitality-mcp.git
+git clone https://github.com/Mik2503/hospitality-mcp.git
 cd hospitality-mcp
 npm install
 cp .env.example .env   # then add your Apaleo credentials (see below)
