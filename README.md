@@ -4,6 +4,7 @@
 # 🏨 hospitality-mcp
 
 **Talk to your hotel's PMS in plain language.**
+
 An unofficial [Model Context Protocol](https://modelcontextprotocol.io) server
 that connects hotel property-management systems to AI assistants like Claude —
 starting with [Apaleo](https://apaleo.com).
@@ -11,6 +12,7 @@ starting with [Apaleo](https://apaleo.com).
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 [![Made with TypeScript](https://img.shields.io/badge/TypeScript-Node.js-3178c6.svg)](https://www.typescriptlang.org/)
 [![MCP](https://img.shields.io/badge/MCP-server-000.svg)](https://modelcontextprotocol.io)
+[![Read-only by default](https://img.shields.io/badge/writes-off%20by%20default-brightgreen.svg)](#-security)
 
 </div>
 
@@ -23,33 +25,62 @@ starting with [Apaleo](https://apaleo.com).
 ## What is this?
 
 `hospitality-mcp` lets front-desk, revenue, and management users **ask and act
-on their hotel data in natural language** from inside Claude — without logging
-into the PMS panel. "Who arrives today?", "What's our occupancy this month?",
-"Find the Müller reservation" — answered from live PMS data.
+on their hotel data in natural language** from inside Claude — no PMS panel
+required. Point it at your PMS, and questions like *"who arrives today?"* or
+*"what's our RevPAR this week?"* are answered from live data.
 
-## 🚀 The hook: try it in 5 minutes, no hotel required
+It's built around a **PMS-neutral core** so the community can add more PMS
+platforms as adapters. Apaleo is the first, chosen because it has the most open
+developer experience in the industry: **free self-serve signup + a sandbox with
+sample data**.
 
-Apaleo offers a **free, self-serve sandbox with sample data**. You can clone
-this repo, plug in free sandbox credentials, and see it working against a
-realistic hotel dataset **without owning a hotel**. That's the whole point.
+## 🚀 Try it in 5 minutes — no hotel required
 
-<!-- TODO(phase 6): add asciinema / GIF demo here -->
+Apaleo offers a **free developer account with a test environment full of sample
+data**. Clone this repo, plug in free sandbox credentials, and you're querying a
+realistic 5-hotel dataset in minutes — **without owning a hotel**. That's the
+whole point.
 
-## Use cases
+<!-- TODO: add asciinema / GIF demo here -->
+<p align="center"><i>▶️ demo GIF coming soon</i></p>
 
-<!-- TODO(phase 6): expand with real prompt examples per persona -->
+## 💬 What you can ask
 
-- **Front desk / ops** — arrivals & departures today, VIP arrivals,
-  housekeeping status, calendar gaps.
-- **Revenue / management** — occupancy, ADR, RevPAR, month-over-month, booking
-  pace.
-- **Guest** — look up a reservation, view a guest profile and history.
-- **Actions (opt-in, with confirmation)** — create, modify, or cancel a
-  reservation conversationally.
+| Persona | Example prompts |
+|---|---|
+| **Front desk / ops** | *"Who checks in today at BER?"* · *"Show me tomorrow's departures."* · *"Any dirty rooms right now?"* |
+| **Revenue / management** | *"What's occupancy, ADR and RevPAR for BER from Jul 11–18?"* · *"Compare this week's RevPAR to last week's."* |
+| **Guest services** | *"Find the reservation for Lovelace."* · *"Pull up guest Angelo's history."* |
 
-## Quick start
+Claude decides which tools to call and chains them as needed (e.g. calling the
+KPI tool twice to compare two periods).
 
-<!-- TODO(phase 4/6): add Claude config + first prompt to complete the quick start -->
+## 🧰 Tools
+
+**Read tools** (always available):
+
+| Tool | What it does |
+|---|---|
+| `list_properties` | List accessible hotels with id, currency, time zone |
+| `get_arrivals` | Reservations checking in on a date (default: today) |
+| `get_departures` | Reservations checking out on a date (default: today) |
+| `search_reservations` | Search by guest name, status, and/or date window |
+| `get_reservation` | Full detail of one reservation |
+| `get_availability` | Bookable units per room type for a date range |
+| `get_guest` | Guest profile + reservation history |
+| `get_occupancy_kpis` | Occupancy, ADR, RevPAR (states its methodology) |
+| `get_housekeeping` | Housekeeping condition & occupancy of units |
+
+**Write tools** — 🧪 **experimental, opt-in, off by default:**
+`create_reservation`, `modify_reservation`, `cancel_reservation`.
+
+> These are implemented against Apaleo's official API but **not yet validated
+> against a live PMS**, so don't expect them to be polished. They are
+> **disabled by default**; when enabled, each one requires an explicit
+> confirmation and shows a preview first (see [Security](#-security)). Use with
+> care. The server is **read-only out of the box.**
+
+## ⚡ Quick start
 
 ```bash
 git clone https://github.com/<your-org>/hospitality-mcp.git
@@ -61,26 +92,21 @@ npm run build
 
 ### 1. Get free Apaleo credentials
 
-Apaleo offers a **free, self-serve developer account** — no sales call, no
-contract — with a test environment you can use to try this project.
-
-1. **Sign up** for a free apaleo account at
-   [apaleo.dev](https://apaleo.dev) → _Sign up_ (this also gives you access to
-   the developer dashboard).
-2. Open the dashboard at
-   [app.apaleo.com/dashboard](https://app.apaleo.com/dashboard).
+1. **Sign up** for a free apaleo account at [apaleo.dev](https://apaleo.dev)
+   (this also gives you the developer dashboard).
+2. Open [app.apaleo.com/dashboard](https://app.apaleo.com/dashboard).
 3. Go to **Apps → Connected apps → Add a new app → Add custom app**.
-4. Fill in a **Client code** and **Client name** (anything you like).
+4. Fill in a **Client code** and **Client name**.
 5. Under **Scopes**, grant the three read scopes this server uses:
    - `setup.read` — properties, unit groups, units, housekeeping status
    - `reservations.read` — reservations, arrivals, departures, guests, revenue
    - `availability.read` — availability and occupancy KPIs
 
-   Only add `reservations.manage` if you plan to enable writes (off by
-   default).
+   (Only add `reservations.manage` if you plan to enable the experimental
+   writes — see below.)
 6. Save, then copy the generated **Client ID** and **Client Secret**.
-   > 🔒 Store the client secret securely and never commit it. If it ever leaks,
-   > rotate it in the dashboard (see [SECURITY.md](./SECURITY.md)).
+   > 🔒 Store the secret securely and never commit it. If it ever leaks, rotate
+   > it in the dashboard (see [SECURITY.md](./SECURITY.md)).
 
 ### 2. Add your credentials
 
@@ -93,35 +119,91 @@ APALEO_CLIENT_SECRET=your_client_secret_here
 
 ### 3. Verify authentication
 
-Confirm everything works with a one-shot check that gets a token and makes a
-single trivial read call — it prints **no** secrets or tokens:
-
 ```bash
 npm run verify:auth
 ```
 
-Expected output ends with `🎉 Apaleo authentication is working.`
+Gets a token and makes one trivial read call. It prints **no** secrets or
+tokens, and ends with `🎉 Apaleo authentication is working.`
 
-_Claude Desktop / Claude Code configuration snippet coming in a later build
-phase._
+### 4. Connect it to Claude
 
-## Security
+**Claude Desktop** — edit
+`~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) or the
+equivalent on your OS:
 
-<!-- TODO(phase 6): expand -->
+```json
+{
+  "mcpServers": {
+    "hospitality-mcp": {
+      "command": "node",
+      "args": ["/absolute/path/to/hospitality-mcp/dist/index.js"]
+    }
+  }
+}
+```
 
-- **Local-only**, no intermediate server, no telemetry.
-- **Read-only by default.** Writes require an explicit opt-in flag.
-- **Writes need confirmation** and show a preview first.
-- **Least-privilege OAuth** scopes.
+**Claude Code:**
 
-See [SECURITY.md](./SECURITY.md) for the full policy.
+```bash
+claude mcp add hospitality-mcp -- node /absolute/path/to/hospitality-mcp/dist/index.js
+```
 
-## Architecture
+Credentials are read from the project's `.env` automatically, so you don't need
+to duplicate them in the host config. Restart Claude and ask *"Who arrives today
+at BER?"*
 
-Built around a PMS-neutral core so the community can add more PMS platforms as
-adapters. See [`docs/ADD_AN_ADAPTER.md`](./docs/ADD_AN_ADAPTER.md) _(coming in a
-later phase)_.
+## 🔒 Security
 
-## License
+Trust is a feature. See [SECURITY.md](./SECURITY.md) for the full policy.
+
+- **Local-only.** Runs on your machine over stdio. No intermediate server, no
+  telemetry. Credentials and hotel data never leave your machine except to reach
+  Apaleo directly.
+- **Read-only by default.** Write tools are **not even registered** unless you
+  set `APALEO_ENABLE_WRITES=true`.
+- **Writes require confirmation.** Every write tool returns a **preview** and
+  makes no change unless called again with `confirm: true`.
+- **Least privilege.** Only read scopes are requested by default; the
+  `reservations.manage` scope is requested only when writes are enabled.
+- **No secret logging.** Credentials and tokens are never written to logs or
+  error messages — they are redacted.
+
+> Enabling writes makes the server request the `reservations.manage` scope. Your
+> connected app must have it granted, or even login fails. Grant it first.
+
+## 🧩 Architecture — add your PMS
+
+Three layers keep it PMS-neutral:
+
+1. **Normalized core** — neutral hotel types (`Reservation`, `Guest`,
+   `Property`, `Availability`, `OccupancyKPIs`, …). No provider details leak in.
+2. **`PMSAdapter` interface** — the contract every PMS implements.
+3. **Adapters** — e.g. the Apaleo adapter maps its API to the normalized types.
+
+Tools only ever call the normalized interface, so **adding a new PMS = writing
+one adapter**, with zero changes to the tools. Want Mews, Cloudbeds, or your
+own? See **[docs/ADD_AN_ADAPTER.md](./docs/ADD_AN_ADAPTER.md)**.
+
+## 🗺️ Status & roadmap
+
+- ✅ Apaleo read tools — validated against the live sandbox.
+- 🧪 Apaleo write tools — implemented & gated, **not yet validated live**.
+- ⏳ More PMS adapters — contributions welcome.
+
+Known assumptions being refined are tracked in [docs/TODO.md](./docs/TODO.md).
+
+## 🤝 Contributing
+
+Issues and PRs are welcome — especially new PMS adapters and live-validating the
+write path. Please don't include real credentials in issues, tests, or fixtures.
+
+## 📄 License
 
 [MIT](./LICENSE) © hospitality-mcp contributors
+
+---
+
+> **Reminder:** This is an **unofficial** project and is **not affiliated with,
+> endorsed by, or supported by Apaleo**. "Apaleo" and related marks belong to
+> their respective owners.
