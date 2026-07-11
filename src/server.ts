@@ -7,9 +7,11 @@
 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { PMSAdapter } from "./core/index.js";
+import { isWritable } from "./core/index.js";
 import type { AppConfig } from "./config.js";
 import type { Logger } from "./logger.js";
 import { registerReadTools } from "./tools/register.js";
+import { registerWriteTools } from "./tools/write.js";
 
 export const SERVER_NAME = "hospitality-mcp";
 export const SERVER_VERSION = "0.1.0";
@@ -30,7 +32,20 @@ export function createServer(
   );
 
   registerReadTools(server, adapter, config, logger);
-  // Phase 5 will conditionally register write tools here when writes are enabled.
+
+  // Write tools are registered ONLY when the user explicitly enabled writes AND
+  // the adapter can perform them. Otherwise they don't exist at all.
+  if (config.apaleo.enableWrites) {
+    if (isWritable(adapter)) {
+      registerWriteTools(server, adapter, config, logger);
+    } else {
+      logger.warn(
+        "APALEO_ENABLE_WRITES is true but the active adapter does not support writes.",
+      );
+    }
+  } else {
+    logger.info("Writes disabled (read-only). Set APALEO_ENABLE_WRITES=true to enable.");
+  }
 
   return server;
 }

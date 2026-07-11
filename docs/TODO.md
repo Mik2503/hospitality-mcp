@@ -34,6 +34,23 @@ richer real account. None block current functionality.
 - TODO: optionally offer a **realized** (folio-based) revenue mode. That would
   require the `folios.read` scope (intentionally not requested today).
 
+## Write operations (not yet validated against a live sandbox)
+The write endpoints were implemented from the official Apaleo Booking swagger
+but not exercised live, because validating them requires the `reservations.manage`
+scope (intentionally not granted yet). Verify against the sandbox once the scope
+is granted:
+- **create**: `POST /booking/v1/bookings` — confirm the create response exposes
+  the new reservation id as `reservationIds[0]` (fallback used otherwise).
+- **modify (stay)**: `PUT /booking/v1/reservation-actions/{id}/amend` with
+  `requote: true` and one `{ratePlanId}` time-slice per night, reusing the
+  current rate plan. Confirm repricing behavior is acceptable.
+- **modify (notes)**: `PATCH /booking/v1/reservations/{id}` JSON Patch on
+  `/comment`. Confirm the correct field (`comment` vs `guestComment`).
+- **cancel**: `PUT /booking/v1/reservation-actions/{id}/cancel` (no body).
+  `reason` is currently not sent (no field in the API).
+- **childrenAges**: our input carries a children COUNT, not ages; create/modify
+  send `DEFAULT_CHILD_AGE` (10) per child. Revisit if ages must be accurate.
+
 ## getGuest merge behavior
 - Apaleo has no global guest directory, so `getGuest` searches reservations by
   `textSearch` and treats the most recent reservation's guest as canonical.

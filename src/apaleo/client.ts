@@ -34,8 +34,10 @@ export type QueryValue =
 export interface RequestOptions {
   /** Query parameters. Values are stringified; undefined/null are dropped. */
   query?: Record<string, QueryValue>;
-  /** JSON request body (for future write operations). */
+  /** JSON request body (for write operations). */
   body?: unknown;
+  /** Content-Type for the body. Defaults to application/json. */
+  contentType?: string;
 }
 
 export class ApaleoClient {
@@ -100,7 +102,7 @@ export class ApaleoClient {
       };
       let bodyInit: string | undefined;
       if (options.body !== undefined) {
-        headers["Content-Type"] = "application/json";
+        headers["Content-Type"] = options.contentType ?? "application/json";
         bodyInit = JSON.stringify(options.body);
       }
       // Note: `headers` (incl. Authorization) is intentionally never logged.

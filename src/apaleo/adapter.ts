@@ -19,22 +19,25 @@ import type {
   HousekeepingStatus,
   Money,
   OccupancyKPIs,
-  PMSAdapter,
   Property,
   Reservation,
+  WritablePMSAdapter,
 } from "../core/index.js";
-import { NotFoundError } from "../core/index.js";
+import { NotFoundError, WriteNotAllowedError } from "../core/index.js";
 import type {
   ArrivalsQuery,
   AvailabilityQuery,
+  CancelReservationInput,
+  CreateReservationInput,
   GuestLookup,
   HousekeepingQuery,
+  ModifyReservationInput,
   OccupancyQuery,
   ReservationSearchQuery,
 } from "../core/index.js";
 import type { ApaleoClient, QueryValue } from "./client.js";
 import { ApaleoApiError } from "./errors.js";
-import { addDays, localDate, round2 } from "./dates.js";
+import { addDays, diffDays, localDate, round2 } from "./dates.js";
 import {
   mapAvailability,
   mapProperty,
@@ -55,13 +58,21 @@ const RESERVATION_EXPAND = "primaryGuest,unitGroup,unit,ratePlan";
 const DEFAULT_PAGE_SIZE = 100;
 /** Safety cap on how many items we page through for one call. */
 const DEFAULT_MAX_ITEMS = 1000;
+/** Channel code stamped on reservations created via this server. */
+const CREATE_CHANNEL_CODE = "Direct";
+/**
+ * Placeholder age used when a caller gives a children COUNT but no ages (our
+ * normalized input carries a count, not ages). Ages can affect pricing, so this
+ * is documented in docs/TODO.md as an assumption to refine.
+ */
+const DEFAULT_CHILD_AGE = 10;
 
 export interface ApaleoAdapterOptions {
   /** Cap on items paged through per listing call. Default 1000. */
   maxItems?: number;
 }
 
-export class ApaleoAdapter implements PMSAdapter {
+export class ApaleoAdapter implements WritablePMSAdapter {
   readonly name = "apaleo";
 
   private readonly client: ApaleoClient;
@@ -310,6 +321,137 @@ export class ApaleoAdapter implements PMSAdapter {
       "units",
     );
     return raw.filter((u) => !u.isArchived).map(mapUnitToHousekeeping);
+  }
+
+  // --- writes -------------------------------------------------------------
+  //
+  // Endpoints verified against the official Apaleo Booking swagger:
+  //   create : POST /booking/v1/bookings
+  //   amend  : PUT  /booking/v1/reservation-actions/{id}/amend
+  //   notes  : PATCH /booking/v1/reservations/{id}   (JSON Patch)
+  //   cancel : PUT  /booking/v1/reservation-actions/{id}/cancel  (no body)
+  //
+  // These are gated behind APALEO_ENABLE_WRITES + confirm at the tool layer.
+  // NOTE: enabling writes requires the `reservations.manage` scope on the
+  // connected app, otherwise even token acquisition fails.
+
+  async createReservation(input: CreateReservationInput): Promise<Reservation> {
+    if (!input.ratePlanId) {
+      throw new WriteNotAllowedError(
+        "Apaleo requires a ratePlanId to create a reservation. " +
+          "Use get_availability to find a room type, then supply its rate plan id.",
+      );
+    }
+    const nights = diffDays(input.departure, input.arrival);
+    if (nights < 1) {
+      throw new WriteNotAllowedError("departure must be after arrival (at least 1 night).");
+    }
+
+    const guest = {
+      firstName: input.guest.firstName,
+      lastName: input.guest.lastName,
+      ...(input.guest.email ? { email: input.guest.email } : {}),
+      ...(input.guest.phone ? { phone: input.guest.phone } : {}),
+    };
+
+    const body = {
+      booker: guest,
+      reservations: [
+        {
+          arrival: input.arrival,
+          departure: input.departure,
+          adults: input.adults,
+          ...(input.children && input.children > 0
+            ? { childrenAges: Array<number>(input.children).fill(DEFAULT_CHILD_AGE) }
+            : {}),
+          channelCode: CREATE_CHANNEL_CODE,
+          primaryGuest: guest,
+          ...(input.notes ? { comment: input.notes } : {}),
+          timeSlices: Array.from({ length: nights }, () => ({
+            ratePlanId: input.ratePlanId,
+          })),
+        },
+      ],
+    };
+
+    const created = await this.client.post<{
+      reservationIds?: string[];
+      reservations?: Array<{ id?: string }>;
+    }>("/booking/v1/bookings", { body });
+
+    const newId = created?.reservationIds?.[0] ?? created?.reservations?.[0]?.id;
+    if (!newId) {
+      throw new WriteNotAllowedError(
+        "Apaleo accepted the booking but did not return a reservation id.",
+      );
+    }
+    this.logger.info(`Created reservation ${newId}.`);
+    return this.getReservation(newId);
+  }
+
+  async modifyReservation(input: ModifyReservationInput): Promise<Reservation> {
+    // Read the current reservation to fill in fields the caller didn't change.
+    const currentRaw = await this.client.get<ApaleoReservation>(
+      `/booking/v1/reservations/${encodeURIComponent(input.reservationId)}`,
+      { expand: `${RESERVATION_EXPAND},timeSlices` },
+    );
+
+    const stayChanged =
+      input.arrival !== undefined ||
+      input.departure !== undefined ||
+      input.adults !== undefined ||
+      input.children !== undefined;
+
+    if (stayChanged) {
+      const ratePlanId = currentRaw.ratePlan?.id;
+      if (!ratePlanId) {
+        throw new WriteNotAllowedError(
+          "Cannot amend this reservation: its rate plan is unknown.",
+        );
+      }
+      const arrival = input.arrival ?? localDate(currentRaw.arrival);
+      const departure = input.departure ?? localDate(currentRaw.departure);
+      const nights = diffDays(departure, arrival);
+      if (nights < 1) {
+        throw new WriteNotAllowedError("departure must be after arrival (at least 1 night).");
+      }
+      const desiredStay = {
+        arrival,
+        departure,
+        adults: input.adults ?? currentRaw.adults ?? 1,
+        ...(input.children !== undefined && input.children > 0
+          ? { childrenAges: Array<number>(input.children).fill(DEFAULT_CHILD_AGE) }
+          : {}),
+        requote: true,
+        timeSlices: Array.from({ length: nights }, () => ({ ratePlanId })),
+      };
+      await this.client.put(
+        `/booking/v1/reservation-actions/${encodeURIComponent(input.reservationId)}/amend`,
+        { body: desiredStay },
+      );
+    }
+
+    if (input.notes !== undefined) {
+      await this.client.patch(
+        `/booking/v1/reservations/${encodeURIComponent(input.reservationId)}`,
+        {
+          body: [{ op: "add", path: "/comment", value: input.notes }],
+          contentType: "application/json-patch+json",
+        },
+      );
+    }
+
+    this.logger.info(`Modified reservation ${input.reservationId}.`);
+    return this.getReservation(input.reservationId);
+  }
+
+  async cancelReservation(input: CancelReservationInput): Promise<Reservation> {
+    // Apaleo's cancel endpoint takes no body; `reason` is not sent (documented).
+    await this.client.put(
+      `/booking/v1/reservation-actions/${encodeURIComponent(input.reservationId)}/cancel`,
+    );
+    this.logger.info(`Canceled reservation ${input.reservationId}.`);
+    return this.getReservation(input.reservationId);
   }
 
   // --- helpers ------------------------------------------------------------
