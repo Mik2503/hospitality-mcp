@@ -372,9 +372,13 @@ export class ApaleoAdapter implements PMSAdapter {
     }
 
     if (items.length >= max) {
-      this.logger.warn(
-        `Apaleo ${path}: result capped at ${max} items; some data may be omitted.`,
-      );
+      // Only warn when we hit the safety cap, not a smaller caller-provided
+      // limit (that truncation is intentional, not surprising).
+      if (max >= this.maxItems) {
+        this.logger.warn(
+          `Apaleo ${path}: result capped at ${max} items; some data may be omitted.`,
+        );
+      }
       return items.slice(0, max);
     }
     return items;
