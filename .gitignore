@@ -1,0 +1,35 @@
+# === Secrets & environment — NEVER commit these ===
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets.json
+credentials.json
+
+# === Dependencies ===
+node_modules/
+
+# === Build output ===
+dist/
+build/
+*.tsbuildinfo
+
+# === Logs ===
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# === OS / editor cruft ===
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+# === Test / coverage ===
+coverage/
+.nyc_output/
