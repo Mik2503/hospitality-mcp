@@ -13,13 +13,24 @@
  * which scopes to grant.
  */
 
-/** Scopes needed for all read-only tools. */
+/**
+ * Scopes needed for all read-only tools.
+ *
+ * Deliberately minimal — these three are exactly what the v1 read tools use:
+ *  - `setup.read`        properties, unit groups, units, and housekeeping
+ *                        condition (unit status)
+ *  - `reservations.read` reservations, arrivals, departures, guest lookups,
+ *                        and the room revenue used to derive ADR / RevPAR
+ *  - `availability.read` availability and the occupancy counts used for KPIs
+ *
+ * We intentionally do NOT request `folios.read` or `maintenances.read`: the v1
+ * tools derive revenue from reservations and housekeeping from unit status, so
+ * those scopes would be privilege we never exercise.
+ */
 export const READ_SCOPES = [
-  "setup.read", // properties, units, unit groups, rate plans
-  "reservations.read", // reservations, arrivals, departures
-  "availability.read", // availability / occupancy
-  "folios.read", // charges & payments (used for ADR / RevPAR)
-  "maintenances.read", // maintenance windows (housekeeping-adjacent)
+  "setup.read",
+  "reservations.read",
+  "availability.read",
 ] as const;
 
 /** Additional scopes needed only when writes are enabled. */

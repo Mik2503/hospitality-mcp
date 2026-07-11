@@ -22,9 +22,18 @@ export interface ApaleoClientOptions {
   fetchFn?: typeof fetch;
 }
 
+/** A single query-parameter value; arrays become repeated params. */
+export type QueryValue =
+  | string
+  | number
+  | boolean
+  | undefined
+  | null
+  | Array<string | number | boolean>;
+
 export interface RequestOptions {
   /** Query parameters. Values are stringified; undefined/null are dropped. */
-  query?: Record<string, string | number | boolean | undefined | null>;
+  query?: Record<string, QueryValue>;
   /** JSON request body (for future write operations). */
   body?: unknown;
 }
@@ -66,7 +75,11 @@ export class ApaleoClient {
     const normalizedPath = path.startsWith("/") ? path : `/${path}`;
     const url = new URL(this.baseUrl + normalizedPath);
     for (const [key, value] of Object.entries(query ?? {})) {
-      if (value !== undefined && value !== null) {
+      if (value === undefined || value === null) continue;
+      if (Array.isArray(value)) {
+        // Repeated params, e.g. ?propertyIds=BER&propertyIds=MUC
+        for (const item of value) url.searchParams.append(key, String(item));
+      } else {
         url.searchParams.set(key, String(value));
       }
     }

@@ -71,12 +71,10 @@ contract — with a test environment you can use to try this project.
    [app.apaleo.com/dashboard](https://app.apaleo.com/dashboard).
 3. Go to **Apps → Connected apps → Add a new app → Add custom app**.
 4. Fill in a **Client code** and **Client name** (anything you like).
-5. Under **Scopes**, grant the read scopes this server uses:
-   - `setup.read`
-   - `reservations.read`
-   - `availability.read`
-   - `folios.read`
-   - `maintenances.read`
+5. Under **Scopes**, grant the three read scopes this server uses:
+   - `setup.read` — properties, unit groups, units, housekeeping status
+   - `reservations.read` — reservations, arrivals, departures, guests, revenue
+   - `availability.read` — availability and occupancy KPIs
 
    Only add `reservations.manage` if you plan to enable writes (off by
    default).

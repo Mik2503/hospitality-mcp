@@ -5,6 +5,7 @@
 
 import { ApaleoTokenManager } from "./auth.js";
 import { ApaleoClient } from "./client.js";
+import { ApaleoAdapter } from "./adapter.js";
 import { scopesForConfig } from "./scopes.js";
 import type { ApaleoConfig } from "../config.js";
 import type { Logger } from "../logger.js";
@@ -12,6 +13,7 @@ import type { Logger } from "../logger.js";
 export interface ApaleoRuntime {
   tokenManager: ApaleoTokenManager;
   client: ApaleoClient;
+  adapter: ApaleoAdapter;
 }
 
 export function createApaleoRuntime(
@@ -32,5 +34,7 @@ export function createApaleoRuntime(
     logger,
   });
 
-  return { tokenManager, client };
+  const adapter = new ApaleoAdapter(client, logger);
+
+  return { tokenManager, client, adapter };
 }
