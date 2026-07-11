@@ -19,6 +19,7 @@ import type {
   UnitGroupAvailability,
 } from "../core/index.js";
 import { diffDays, localDate } from "./dates.js";
+import type { Logger } from "../logger.js";
 import type {
   ApaleoAddress,
   ApaleoAmount,
@@ -47,11 +48,22 @@ const STATUS_TO_APALEO: Partial<Record<ReservationStatus, string>> = {
   no_show: "NoShow",
 };
 
-/** Map an Apaleo reservation status to the normalized status. */
-export function toReservationStatus(raw: string | undefined): ReservationStatus {
+/**
+ * Map an Apaleo reservation status to the normalized status.
+ *
+ * A value we don't recognize maps to `"unknown"` — NEVER to an active state.
+ * It is safer to admit we don't know the status than to falsely assert the
+ * reservation is active. Unrecognized values are logged so they surface.
+ */
+export function toReservationStatus(
+  raw: string | undefined,
+  logger?: Logger,
+): ReservationStatus {
   if (raw && raw in APALEO_TO_STATUS) return APALEO_TO_STATUS[raw]!;
-  // Unknown/unexpected value: default to "confirmed" (a safe, active state).
-  return "confirmed";
+  logger?.warn(
+    `Unrecognized Apaleo reservation status ${JSON.stringify(raw)}; mapping to "unknown".`,
+  );
+  return "unknown";
 }
 
 /** Map a normalized status to the Apaleo value, if one exists. */
@@ -117,7 +129,7 @@ export function mapGuest(raw: ApaleoGuest | undefined): Guest {
   return guest;
 }
 
-export function mapReservation(raw: ApaleoReservation): Reservation {
+export function mapReservation(raw: ApaleoReservation, logger?: Logger): Reservation {
   const arrival = localDate(raw.arrival);
   const departure = localDate(raw.departure);
   const nights = arrival && departure ? Math.max(0, diffDays(departure, arrival)) : 0;
@@ -125,7 +137,7 @@ export function mapReservation(raw: ApaleoReservation): Reservation {
   const reservation: Reservation = {
     id: raw.id ?? "",
     propertyId: raw.property?.id ?? "",
-    status: toReservationStatus(raw.status),
+    status: toReservationStatus(raw.status, logger),
     primaryGuest: mapGuest(raw.primaryGuest),
     arrival,
     departure,

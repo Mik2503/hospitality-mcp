@@ -58,6 +58,7 @@ const readOnlyAdapter: PMSAdapter = {
       roomRevenue: zero,
       adr: zero,
       revPar: zero,
+      methodology: "in-memory test adapter",
     };
   },
   async getHousekeeping() {

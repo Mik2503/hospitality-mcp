@@ -56,6 +56,7 @@ export const RESERVATION_STATUSES = [
   "checked_out", // stay completed
   "canceled", // reservation canceled
   "no_show", // guest never arrived
+  "unknown", // provider reported a status we don't recognize (never assume active)
 ] as const;
 
 export type ReservationStatus = (typeof RESERVATION_STATUSES)[number];
@@ -218,6 +219,12 @@ export interface OccupancyKPIs {
   roomRevenue: Money;
   adr: Money;
   revPar: Money;
+  /**
+   * Plain-language description of exactly how these figures were derived, so
+   * consumers always know what is being measured (e.g. booked vs realized,
+   * net vs gross of tax, which unit types are included). Adapters must set it.
+   */
+  methodology: string;
 }
 
 /** Housekeeping state of a single unit. */

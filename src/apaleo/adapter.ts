@@ -128,7 +128,7 @@ export class ApaleoAdapter implements PMSAdapter {
       limit,
     );
 
-    let reservations = raw.map(mapReservation);
+    let reservations = raw.map((r) => mapReservation(r, this.logger));
     // If we couldn't push the status filter to the server, filter locally.
     if (query.status?.length && params.status === undefined) {
       const wanted = new Set(query.status);
@@ -143,7 +143,7 @@ export class ApaleoAdapter implements PMSAdapter {
         `/booking/v1/reservations/${encodeURIComponent(reservationId)}`,
         { expand: `${RESERVATION_EXPAND},timeSlices` },
       );
-      return mapReservation(raw);
+      return mapReservation(raw, this.logger);
     } catch (error) {
       if (error instanceof ApaleoApiError && error.status === 404) {
         throw new NotFoundError("reservation", reservationId);
@@ -201,7 +201,7 @@ export class ApaleoAdapter implements PMSAdapter {
     if (raw.length === 0) throw new NotFoundError("guest", term);
 
     const reservations = raw
-      .map(mapReservation)
+      .map((r) => mapReservation(r, this.logger))
       .sort((a, b) => (a.arrival < b.arrival ? 1 : -1));
 
     // Use the most recent reservation's guest as the canonical profile.
@@ -218,10 +218,14 @@ export class ApaleoAdapter implements PMSAdapter {
    * excluding meeting rooms and other non-bedroom unit groups):
    *  - Occupancy from the availability endpoint's per-unit-group counts:
    *    roomsAvailable = Σ physicalCount, roomsSold = Σ soldCount.
-   *  - Room revenue from reservation time-slices: Σ baseAmount.grossAmount for
+   *  - Room revenue from reservation time-slices: Σ baseAmount.netAmount for
    *    bedroom stays with a service date in the window, excluding canceled /
-   *    no-show reservations. This is booked room revenue (gross, excl. extras).
+   *    no-show reservations. This is booked room revenue, NET of VAT and
+   *    excluding extra services.
    *  - ADR = revenue / roomsSold; RevPAR = revenue / roomsAvailable.
+   *
+   * The returned `methodology` string states these choices explicitly so
+   * consumers always know what the numbers mean.
    */
   async getOccupancyKPIs(query: OccupancyQuery): Promise<OccupancyKPIs> {
     const availability = await this.client.get<ApaleoAvailabilityResponse>(
@@ -268,7 +272,7 @@ export class ApaleoAdapter implements PMSAdapter {
       for (const slice of reservation.timeSlices ?? []) {
         const serviceDate = slice.serviceDate ?? localDate(slice.from);
         if (serviceDate >= query.from && serviceDate < query.to) {
-          revenue += slice.baseAmount?.grossAmount ?? 0;
+          revenue += slice.baseAmount?.netAmount ?? 0;
           currency ||= slice.baseAmount?.currency ?? "";
         }
       }
@@ -286,6 +290,11 @@ export class ApaleoAdapter implements PMSAdapter {
       roomRevenue: money(revenue),
       adr: money(roomsSold > 0 ? round2(revenue / roomsSold) : 0),
       revPar: money(roomsAvailable > 0 ? round2(revenue / roomsAvailable) : 0),
+      methodology:
+        "Booked ADR/RevPAR, net of VAT, room-only (excludes extra services), " +
+        "bedrooms only (excludes meeting rooms), excludes canceled/no-show. " +
+        "Room-nights counted over [from, to) (checkout day excluded). " +
+        "Derived from Apaleo availability + reservation rates (no folio/realized revenue).",
     };
   }
 
@@ -327,7 +336,7 @@ export class ApaleoAdapter implements PMSAdapter {
 
     const key = dateFilter === "Arrival" ? "arrival" : "departure";
     return raw
-      .map(mapReservation)
+      .map((r) => mapReservation(r, this.logger))
       .filter((r) => r[key] === date)
       .sort((a, b) => (a.primaryGuest.lastName ?? "").localeCompare(b.primaryGuest.lastName ?? ""));
   }

@@ -24,8 +24,9 @@ test("toReservationStatus maps all Apaleo statuses and defaults safely", () => {
   assert.equal(toReservationStatus("CheckedOut"), "checked_out");
   assert.equal(toReservationStatus("Canceled"), "canceled");
   assert.equal(toReservationStatus("NoShow"), "no_show");
-  assert.equal(toReservationStatus("SomethingNew"), "confirmed");
-  assert.equal(toReservationStatus(undefined), "confirmed");
+  // Unrecognized values must map to "unknown", NEVER an active state.
+  assert.equal(toReservationStatus("SomethingNew"), "unknown");
+  assert.equal(toReservationStatus(undefined), "unknown");
 });
 
 test("toApaleoStatus round-trips known statuses", () => {
@@ -83,7 +84,7 @@ test("mapReservation normalizes a full reservation", () => {
 test("mapReservation is tolerant of a sparse reservation", () => {
   const r = mapReservation({ id: "X", arrival: "2026-01-01", departure: "2026-01-01" });
   assert.equal(r.propertyId, "");
-  assert.equal(r.status, "confirmed");
+  assert.equal(r.status, "unknown");
   assert.equal(r.nights, 0);
   assert.equal(r.adults, 0);
   assert.equal(r.children, 0);
