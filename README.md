@@ -41,8 +41,9 @@ data**. Clone this repo, plug in free sandbox credentials, and you're querying a
 realistic 5-hotel dataset in minutes — **without owning a hotel**. That's the
 whole point.
 
-<!-- TODO: add asciinema / GIF demo here -->
-<p align="center"><i>▶️ demo GIF coming soon</i></p>
+<p align="center">
+  <img src="./assets/demo.gif" alt="hospitality-mcp demo: asking Claude about a hotel's data in natural language" width="800">
+</p>
 
 ## 💬 What you can ask
 
