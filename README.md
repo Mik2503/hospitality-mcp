@@ -49,15 +49,60 @@ realistic hotel dataset **without owning a hotel**. That's the whole point.
 
 ## Quick start
 
-<!-- TODO(phase 4/6): full clone → sandbox creds → Claude config → first prompt -->
+<!-- TODO(phase 4/6): add Claude config + first prompt to complete the quick start -->
 
 ```bash
 git clone https://github.com/<your-org>/hospitality-mcp.git
 cd hospitality-mcp
 npm install
-cp .env.example .env   # then add your Apaleo sandbox credentials
+cp .env.example .env   # then add your Apaleo credentials (see below)
 npm run build
 ```
+
+### 1. Get free Apaleo credentials
+
+Apaleo offers a **free, self-serve developer account** — no sales call, no
+contract — with a test environment you can use to try this project.
+
+1. **Sign up** for a free apaleo account at
+   [apaleo.dev](https://apaleo.dev) → _Sign up_ (this also gives you access to
+   the developer dashboard).
+2. Open the dashboard at
+   [app.apaleo.com/dashboard](https://app.apaleo.com/dashboard).
+3. Go to **Apps → Connected apps → Add a new app → Add custom app**.
+4. Fill in a **Client code** and **Client name** (anything you like).
+5. Under **Scopes**, grant the read scopes this server uses:
+   - `setup.read`
+   - `reservations.read`
+   - `availability.read`
+   - `folios.read`
+   - `maintenances.read`
+
+   Only add `reservations.manage` if you plan to enable writes (off by
+   default).
+6. Save, then copy the generated **Client ID** and **Client Secret**.
+   > 🔒 Store the client secret securely and never commit it. If it ever leaks,
+   > rotate it in the dashboard (see [SECURITY.md](./SECURITY.md)).
+
+### 2. Add your credentials
+
+Paste them into your local `.env` (created from `.env.example`):
+
+```dotenv
+APALEO_CLIENT_ID=your_client_id_here
+APALEO_CLIENT_SECRET=your_client_secret_here
+```
+
+### 3. Verify authentication
+
+Confirm everything works with a one-shot check that gets a token and makes a
+single trivial read call — it prints **no** secrets or tokens:
+
+```bash
+npm run verify:auth
+```
+
+Expected output ends with `🎉 Apaleo authentication is working.`
 
 _Claude Desktop / Claude Code configuration snippet coming in a later build
 phase._

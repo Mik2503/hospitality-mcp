@@ -28,10 +28,12 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "tsc",
+    "build": "tsc -p tsconfig.build.json",
     "dev": "tsx watch src/index.ts",
     "start": "node dist/index.js",
     "typecheck": "tsc --noEmit",
+    "test": "node --import tsx --test \"src/**/*.test.ts\"",
+    "verify:auth": "tsx src/scripts/verify-auth.ts",
     "clean": "rm -rf dist"
   },
   "dependencies": {
