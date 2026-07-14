@@ -5,8 +5,9 @@ your own machine, talks only to your PMS provider, and ships no telemetry. This
 document explains the security posture and how to report issues.
 
 > **Unofficial project disclaimer.** This is an unofficial, community-built
-> project. It is **not affiliated with, endorsed by, or supported by Apaleo**.
-> "Apaleo" and related marks belong to their respective owners.
+> project. It is **not affiliated with, endorsed by, or supported by Apaleo,
+> Mews, or any PMS vendor.** "Apaleo", "Mews" and related names and marks belong
+> to their respective owners.
 
 ## Security posture
 

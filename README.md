@@ -7,7 +7,8 @@
 
 An unofficial [Model Context Protocol](https://modelcontextprotocol.io) server
 that connects hotel property-management systems to AI assistants like Claude —
-starting with [Apaleo](https://apaleo.com).
+with adapters for [Apaleo](https://apaleo.com) and [Mews](https://www.mews.com),
+plus a zero-signup demo mode.
 
 [![CI](https://github.com/Mik2503/hospitality-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/Mik2503/hospitality-mcp/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
@@ -18,8 +19,9 @@ starting with [Apaleo](https://apaleo.com).
 </div>
 
 > ⚠️ **Unofficial project.** This is an unofficial, community-built project. It
-> is **not affiliated with, endorsed by, or supported by Apaleo**. "Apaleo" and
-> related marks belong to their respective owners.
+> is **not affiliated with, endorsed by, or supported by Apaleo, Mews, or any
+> PMS vendor.** "Apaleo", "Mews" and related names and marks belong to their
+> respective owners and are used here only to describe interoperability.
 
 ---
 
@@ -31,9 +33,8 @@ required. Point it at your PMS, and questions like *"who arrives today?"* or
 *"what's our RevPAR this week?"* are answered from live data.
 
 It's built around a **PMS-neutral core** so the community can add more PMS
-platforms as adapters. Apaleo is the first, chosen because it has the most open
-developer experience in the industry: **free self-serve signup + a sandbox with
-sample data**.
+platforms as adapters. It currently ships adapters for **Apaleo** and **Mews**,
+plus a **demo mode** with synthetic data so you can try it without any account.
 
 ## 🚀 Try it in 5 minutes — no hotel required
 
@@ -95,14 +96,20 @@ KPI tool twice to compare two periods).
 | `get_occupancy_kpis` | Occupancy, ADR, RevPAR (states its methodology) |
 | `get_housekeeping` | Housekeeping condition & occupancy of units |
 
+> **Tool coverage by provider.** On **Apaleo** and **demo**, all nine read tools
+> work. The **Mews** adapter is read-only and newer: `get_availability` and
+> `get_occupancy_kpis` are not implemented yet and return a clear "not supported"
+> message; the other seven work. See [docs/TODO.md](./docs/TODO.md).
+
 **Write tools** — 🧪 **experimental, opt-in, off by default:**
 `create_reservation`, `modify_reservation`, `cancel_reservation`.
 
-> These are implemented against Apaleo's official API but **not yet validated
-> against a live PMS**, so don't expect them to be polished. They are
+> These are implemented for Apaleo against its official API but **not yet
+> validated against a live PMS**, so don't expect them to be polished. They are
 > **disabled by default**; when enabled, each one requires an explicit
 > confirmation and shows a preview first (see [Security](#-security)). Use with
-> care. The server is **read-only out of the box.**
+> care. The server is **read-only out of the box** (and the Mews adapter is
+> read-only entirely).
 
 ## ⚡ Quick start
 
@@ -177,13 +184,32 @@ Credentials are read from the project's `.env` automatically, so you don't need
 to duplicate them in the host config. Restart Claude and ask *"Who arrives today
 at BER?"*
 
+### Using Mews instead of Apaleo
+
+hospitality-mcp also ships an **experimental, read-only Mews adapter**. In your
+`.env`, select the Mews provider and add your Mews Connector API tokens:
+
+```dotenv
+PMS_PROVIDER=mews
+MEWS_CLIENT_TOKEN=your_client_token
+MEWS_ACCESS_TOKEN=your_access_token
+# To try it against Mews's public demo instead of a real hotel, also set:
+# MEWS_API_BASE_URL=https://api.mews-demo.com
+```
+
+Get tokens from your own Mews enterprise, or use Mews's **own published demo
+credentials** to try it against the demo environment — both are documented in the
+[Mews Connector API docs](https://docs.mews.com/connector-api/guidelines/environments).
+(We don't ship anyone's tokens in this repo.) Note that `get_availability` and
+`get_occupancy_kpis` aren't implemented for Mews yet.
+
 ## 🔒 Security
 
 Trust is a feature. See [SECURITY.md](./SECURITY.md) for the full policy.
 
 - **Local-only.** Runs on your machine over stdio. No intermediate server, no
   telemetry. Credentials and hotel data never leave your machine except to reach
-  Apaleo directly.
+  your PMS (Apaleo or Mews) directly.
 - **Read-only by default.** Write tools are **not even registered** unless you
   set `APALEO_ENABLE_WRITES=true`.
 - **Writes require confirmation.** Every write tool returns a **preview** and
@@ -203,11 +229,12 @@ Three layers keep it PMS-neutral:
 1. **Normalized core** — neutral hotel types (`Reservation`, `Guest`,
    `Property`, `Availability`, `OccupancyKPIs`, …). No provider details leak in.
 2. **`PMSAdapter` interface** — the contract every PMS implements.
-3. **Adapters** — e.g. the Apaleo adapter maps its API to the normalized types.
+3. **Adapters** — the Apaleo and Mews adapters map their APIs to the normalized
+   types (plus a synthetic `demo` adapter).
 
 Tools only ever call the normalized interface, so **adding a new PMS = writing
-one adapter**, with zero changes to the tools. Want Mews, Cloudbeds, or your
-own? See **[docs/ADD_AN_ADAPTER.md](./docs/ADD_AN_ADAPTER.md)**.
+one adapter**, with zero changes to the tools. Want Cloudbeds, another PMS, or to
+extend the Mews adapter? See **[docs/ADD_AN_ADAPTER.md](./docs/ADD_AN_ADAPTER.md)**.
 
 ## 🗺️ Status & roadmap
 
@@ -233,5 +260,5 @@ please never include real credentials in issues, tests, or fixtures.
 ---
 
 > **Reminder:** This is an **unofficial** project and is **not affiliated with,
-> endorsed by, or supported by Apaleo**. "Apaleo" and related marks belong to
-> their respective owners.
+> endorsed by, or supported by Apaleo, Mews, or any PMS vendor.** "Apaleo",
+> "Mews" and related names and marks belong to their respective owners.
