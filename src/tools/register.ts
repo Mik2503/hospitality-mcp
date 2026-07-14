@@ -36,7 +36,7 @@ export function registerReadTools(
   config: AppConfig,
   logger: Logger,
 ): void {
-  const defaultProperty = config.apaleo.defaultPropertyId;
+  const defaultProperty = config.defaultPropertyId;
   const resolveProperty = resolvePropertyFactory(defaultProperty);
   const readOnly = READ_ONLY_HINT;
 

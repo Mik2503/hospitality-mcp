@@ -10,36 +10,49 @@ const validEnv = {
 
 test("loads a valid minimal config with sensible defaults", () => {
   const config = loadConfig({ ...validEnv });
-  assert.equal(config.apaleo.clientId, "id");
-  assert.equal(config.apaleo.clientSecret, "secret");
-  assert.equal(config.apaleo.enableWrites, false);
-  assert.equal(config.apaleo.defaultPropertyId, undefined);
-  assert.equal(
-    config.apaleo.tokenUrl,
-    "https://identity.apaleo.com/connect/token",
-  );
-  assert.equal(config.apaleo.apiBaseUrl, "https://api.apaleo.com");
+  assert.equal(config.provider, "apaleo");
+  assert.equal(config.enableWrites, false);
+  assert.equal(config.defaultPropertyId, undefined);
+  assert.equal(config.apaleo?.clientId, "id");
+  assert.equal(config.apaleo?.clientSecret, "secret");
+  assert.equal(config.apaleo?.enableWrites, false);
+  assert.equal(config.apaleo?.defaultPropertyId, undefined);
+  assert.equal(config.apaleo?.tokenUrl, "https://identity.apaleo.com/connect/token");
+  assert.equal(config.apaleo?.apiBaseUrl, "https://api.apaleo.com");
   assert.equal(config.logLevel, "info");
+});
+
+test("demo provider needs no credentials", () => {
+  const config = loadConfig({ PMS_PROVIDER: "demo" } as NodeJS.ProcessEnv);
+  assert.equal(config.provider, "demo");
+  assert.equal(config.enableWrites, false);
+  assert.equal(config.apaleo, undefined);
+  assert.equal(config.defaultPropertyId, "DEMO-BER");
+});
+
+test("demo provider honors a custom default property id", () => {
+  const config = loadConfig({
+    PMS_PROVIDER: "demo",
+    DEMO_DEFAULT_PROPERTY_ID: "DEMO-MUC",
+  } as NodeJS.ProcessEnv);
+  assert.equal(config.defaultPropertyId, "DEMO-MUC");
 });
 
 test("parses APALEO_ENABLE_WRITES truthy/falsy values", () => {
   assert.equal(
-    loadConfig({ ...validEnv, APALEO_ENABLE_WRITES: "true" }).apaleo
-      .enableWrites,
+    loadConfig({ ...validEnv, APALEO_ENABLE_WRITES: "true" }).enableWrites,
     true,
   );
   assert.equal(
-    loadConfig({ ...validEnv, APALEO_ENABLE_WRITES: "TRUE" }).apaleo
-      .enableWrites,
+    loadConfig({ ...validEnv, APALEO_ENABLE_WRITES: "TRUE" }).enableWrites,
     true,
   );
   assert.equal(
-    loadConfig({ ...validEnv, APALEO_ENABLE_WRITES: "false" }).apaleo
-      .enableWrites,
+    loadConfig({ ...validEnv, APALEO_ENABLE_WRITES: "false" }).enableWrites,
     false,
   );
   assert.equal(
-    loadConfig({ ...validEnv, APALEO_ENABLE_WRITES: "" }).apaleo.enableWrites,
+    loadConfig({ ...validEnv, APALEO_ENABLE_WRITES: "" }).enableWrites,
     false,
   );
 });
@@ -85,6 +98,7 @@ test("accepts a custom default property id and log level", () => {
     APALEO_DEFAULT_PROPERTY_ID: "BER",
     LOG_LEVEL: "debug",
   });
-  assert.equal(config.apaleo.defaultPropertyId, "BER");
+  assert.equal(config.defaultPropertyId, "BER");
+  assert.equal(config.apaleo?.defaultPropertyId, "BER");
   assert.equal(config.logLevel, "debug");
 });

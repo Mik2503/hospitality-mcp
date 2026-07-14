@@ -46,6 +46,28 @@ whole point.
   <img src="./assets/demo.gif" alt="hospitality-mcp demo: asking Claude about a hotel's data in natural language" width="800">
 </p>
 
+## ⚡ Zero-signup demo — try it in 30 seconds
+
+Don't want to sign up for anything yet? Run it in **demo mode**: the server
+serves **built-in synthetic sample data** — two fictional hotels, clearly marked
+`(SAMPLE DATA)` — so you can see it work with **no account and no credentials**.
+
+```bash
+git clone https://github.com/Mik2503/hospitality-mcp.git
+cd hospitality-mcp
+npm install && npm run build
+PMS_PROVIDER=demo node dist/index.js       # starts in read-only demo mode
+```
+
+To use it from Claude, point your MCP host at the server with `PMS_PROVIDER=demo`
+in its environment (or put `PMS_PROVIDER=demo` in a local `.env`). Then ask
+*"who arrives today?"* and you'll get answers from the demo hotel.
+
+> Demo mode is **read-only** and the data is **not real** — the server logs a
+> `DEMO MODE` banner and the hotels are named "(SAMPLE DATA)" so it's never
+> mistaken for a live PMS. When you're ready for real data, switch to
+> `PMS_PROVIDER=apaleo` (the default) and add your Apaleo credentials — see below.
+
 ## 💬 What you can ask
 
 | Persona | Example prompts |
@@ -189,9 +211,10 @@ own? See **[docs/ADD_AN_ADAPTER.md](./docs/ADD_AN_ADAPTER.md)**.
 
 ## 🗺️ Status & roadmap
 
+- ✅ Demo mode — zero-signup synthetic data to try the server instantly.
 - ✅ Apaleo read tools — validated against the live sandbox.
 - 🧪 Apaleo write tools — implemented & gated, **not yet validated live**.
-- ⏳ More PMS adapters — contributions welcome.
+- ⏳ More PMS adapters — contributions welcome (Mews is the most accessible next target).
 
 Known assumptions being refined are tracked in [docs/TODO.md](./docs/TODO.md).
 

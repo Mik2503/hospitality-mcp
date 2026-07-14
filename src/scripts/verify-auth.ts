@@ -29,6 +29,12 @@ async function main(): Promise<void> {
   const config = loadConfig();
   const logger = createLogger(config.logLevel);
 
+  if (config.provider !== "apaleo" || !config.apaleo) {
+    throw new ConfigError(
+      "verify:auth only applies to the Apaleo provider. Unset PMS_PROVIDER (or set it to apaleo) and provide APALEO_CLIENT_ID / APALEO_CLIENT_SECRET.",
+    );
+  }
+
   logger.info(
     `Configuration loaded. Writes are ${
       config.apaleo.enableWrites ? "ENABLED" : "disabled (read-only)"
