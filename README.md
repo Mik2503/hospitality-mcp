@@ -214,7 +214,9 @@ own? See **[docs/ADD_AN_ADAPTER.md](./docs/ADD_AN_ADAPTER.md)**.
 - ✅ Demo mode — zero-signup synthetic data to try the server instantly.
 - ✅ Apaleo read tools — validated against the live sandbox.
 - 🧪 Apaleo write tools — implemented & gated, **not yet validated live**.
-- ⏳ More PMS adapters — contributions welcome (Mews is the most accessible next target).
+- 🧪 Mews read tools — validated against the public Mews demo. Availability &
+  occupancy KPIs are not implemented yet for Mews (see [docs/TODO.md](./docs/TODO.md)).
+- ⏳ More PMS adapters — contributions welcome.
 
 Known assumptions being refined are tracked in [docs/TODO.md](./docs/TODO.md).
 

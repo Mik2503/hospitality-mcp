@@ -27,6 +27,7 @@ import { createLogger } from "./logger.js";
 import type { PMSAdapter } from "./core/index.js";
 import { createApaleoRuntime } from "./apaleo/factory.js";
 import { createDemoAdapter } from "./demo/factory.js";
+import { createMewsRuntime } from "./mews/factory.js";
 import { createServer } from "./server.js";
 import { ConfigError } from "./apaleo/errors.js";
 
@@ -41,6 +42,11 @@ async function main(): Promise<void> {
       "⚠️  DEMO MODE — serving SYNTHETIC sample data, NOT a real hotel. " +
         "To use live data, set PMS_PROVIDER=apaleo and add your Apaleo credentials to .env.",
     );
+  } else if (config.provider === "mews") {
+    if (!config.mews) {
+      throw new ConfigError("Mews provider selected but Mews configuration is missing.");
+    }
+    adapter = createMewsRuntime(config.mews, logger).adapter;
   } else {
     if (!config.apaleo) {
       throw new ConfigError("Apaleo provider selected but Apaleo configuration is missing.");

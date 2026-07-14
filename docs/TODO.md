@@ -57,3 +57,41 @@ is granted:
 - TODO: if a search term matches multiple distinct guests, results are mixed.
   Consider grouping by email/name and returning the best match, or surfacing
   that multiple guests matched.
+
+# Mews adapter — open assumptions
+
+The Mews read adapter (`src/mews`) was verified live against the public Mews
+demo (`api.mews-demo.com`). Known gaps and assumptions to refine against a real
+single-hotel enterprise:
+
+## Not implemented yet
+- **getAvailability** and **getOccupancyKPIs** throw `CapabilityNotSupportedError`.
+  Mews availability (`services/getAvailability`) needs the accommodation
+  `ServiceId`, and occupancy/revenue must be derived from availability +
+  accounting/order items. Deferred rather than guessed. Implement against a
+  clean enterprise (the shared demo is heavily polluted with test services).
+
+## Occupancy / person counts
+- Reservations carry occupancy as `PersonCounts` keyed by `AgeCategoryId`
+  (`AdultCount`/`ChildCount` are null). Without the age-category map the adapter
+  reports the **total** persons as `adults` and `children: 0`. Refine by loading
+  `ageCategories/getAll` for the accommodation service and classifying by age.
+
+## Labels (room type / room number)
+- `unitGroupName`/`unitName` are resolved best-effort from `resources/getAll`.
+  When categories aren't returned (as in the demo), the category **id** is shown.
+  On a real enterprise, resolve names via `resourceCategories/getAll` with the
+  accommodation `ServiceId`.
+
+## Guest name search
+- `getGuest` by name uses Mews `customers/getAll` `FirstNames`/`LastNames`, which
+  are exact matches (not substring). Email/id lookups are exact and reliable.
+
+## Single enterprise
+- The Connector API is single-enterprise, so the adapter ignores the
+  `propertyId` argument; `list_properties` returns the one enterprise. A default
+  placeholder property id (`mews`) lets tool calls omit it.
+
+## Writes
+- Not implemented for Mews (read-only adapter). The write path would use the
+  Mews reservation/booking operations, gated like Apaleo's.

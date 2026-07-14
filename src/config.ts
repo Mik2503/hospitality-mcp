@@ -22,7 +22,12 @@ const DEFAULT_API_BASE_URL = "https://api.apaleo.com";
 export const DEMO_DEFAULT_PROPERTY_ID = "DEMO-BER";
 
 /** Which PMS adapter the server runs. */
-export type PmsProvider = "apaleo" | "demo";
+export type PmsProvider = "apaleo" | "demo" | "mews";
+
+/** Default Mews production API base URL. */
+const DEFAULT_MEWS_API_BASE_URL = "https://api.mews.com";
+/** Client string sent on every Mews request. */
+const DEFAULT_MEWS_CLIENT_NAME = "hospitality-mcp 0.1.0";
 
 export interface ApaleoConfig {
   clientId: string;
@@ -30,6 +35,16 @@ export interface ApaleoConfig {
   enableWrites: boolean;
   defaultPropertyId: string | undefined;
   tokenUrl: string;
+  apiBaseUrl: string;
+}
+
+export interface MewsConfig {
+  /** Integration-level token (identifies the app). */
+  clientToken: string;
+  /** Enterprise-level token (identifies the hotel/enterprise). */
+  accessToken: string;
+  /** Human-readable `Client` string sent with each request. */
+  clientName: string;
   apiBaseUrl: string;
 }
 
@@ -42,6 +57,8 @@ export interface AppConfig {
   defaultPropertyId: string | undefined;
   /** Apaleo settings — present only when `provider === "apaleo"`. */
   apaleo?: ApaleoConfig;
+  /** Mews settings — present only when `provider === "mews"`. */
+  mews?: MewsConfig;
   logLevel: LogLevel;
 }
 
@@ -67,10 +84,15 @@ function assertUrl(value: string, varName: string): string {
 
 const RawEnvSchema = z.object({
   PMS_PROVIDER: z
-    .enum(["apaleo", "demo"], {
-      error: 'PMS_PROVIDER must be "apaleo" or "demo"',
+    .enum(["apaleo", "demo", "mews"], {
+      error: 'PMS_PROVIDER must be "apaleo", "demo" or "mews"',
     })
     .optional(),
+  MEWS_CLIENT_TOKEN: z.string().optional(),
+  MEWS_ACCESS_TOKEN: z.string().optional(),
+  MEWS_CLIENT_NAME: z.string().optional(),
+  MEWS_API_BASE_URL: z.string().min(1).optional(),
+  MEWS_DEFAULT_PROPERTY_ID: z.string().optional(),
   // Apaleo credentials are validated in code (only required for the apaleo
   // provider), so they are optional at the schema level.
   APALEO_CLIENT_ID: z.string().optional(),
@@ -121,6 +143,40 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
         demoDefault && demoDefault.length > 0
           ? demoDefault
           : DEMO_DEFAULT_PROPERTY_ID,
+      logLevel,
+    };
+  }
+
+  // ---- Mews provider: connector tokens required. --------------------------
+  if (provider === "mews") {
+    const clientToken = raw.MEWS_CLIENT_TOKEN?.trim();
+    const accessToken = raw.MEWS_ACCESS_TOKEN?.trim();
+    const missingMews: string[] = [];
+    if (!clientToken) missingMews.push("MEWS_CLIENT_TOKEN");
+    if (!accessToken) missingMews.push("MEWS_ACCESS_TOKEN");
+    if (missingMews.length > 0) {
+      throw new ConfigError(
+        "Invalid configuration. Check your .env file (copy .env.example):\n" +
+          missingMews.map((name) => `- ${name}: ${name} is required`).join("\n") +
+          "\n(Tip: set PMS_PROVIDER=demo to try the server with no credentials.)",
+      );
+    }
+    const mewsDefault = raw.MEWS_DEFAULT_PROPERTY_ID?.trim();
+    return {
+      provider,
+      enableWrites: false, // Mews adapter is read-only in this version
+      // Mews is single-enterprise; the adapter ignores the property id, but the
+      // tool layer still needs a default so calls don't require one.
+      defaultPropertyId: mewsDefault && mewsDefault.length > 0 ? mewsDefault : "mews",
+      mews: {
+        clientToken: clientToken as string,
+        accessToken: accessToken as string,
+        clientName: raw.MEWS_CLIENT_NAME?.trim() || DEFAULT_MEWS_CLIENT_NAME,
+        apiBaseUrl: assertUrl(
+          raw.MEWS_API_BASE_URL ?? DEFAULT_MEWS_API_BASE_URL,
+          "MEWS_API_BASE_URL",
+        ),
+      },
       logLevel,
     };
   }
