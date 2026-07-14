@@ -1,0 +1,15 @@
+# Rules for the Labeler workflow. Labels referenced here must already exist in
+# the repo. "documentation" and "dependencies" are default labels (the latter is
+# created by Dependabot), so this works out of the box. Add more mappings once
+# you've created the corresponding labels (e.g. an "adapter" label).
+documentation:
+  - changed-files:
+      - any-glob-to-any-file:
+          - '**/*.md'
+          - 'docs/**'
+
+dependencies:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'package.json'
+          - 'package-lock.json'

@@ -1,0 +1,36 @@
+name: Stale
+
+# Gently nudges, then closes, issues/PRs with no activity. Runs daily.
+# Timings are generous on purpose for a young project; tweak or delete freely.
+on:
+  schedule:
+    - cron: "0 3 * * *"
+  workflow_dispatch: {}
+
+permissions:
+  issues: write
+  pull-requests: write
+
+jobs:
+  stale:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/stale@v9
+        with:
+          days-before-stale: 60
+          days-before-close: 14
+          stale-issue-label: stale
+          stale-pr-label: stale
+          exempt-issue-labels: "pinned,security,help wanted,good first issue"
+          exempt-pr-labels: "pinned,security"
+          stale-issue-message: >
+            This issue has had no activity for 60 days, so it's been marked stale.
+            Comment to keep it open — otherwise it will be closed in 14 days. Thanks! 🏨
+          stale-pr-message: >
+            This pull request has had no activity for 60 days, so it's been marked stale.
+            Comment or push to keep it open — otherwise it will be closed in 14 days. Thanks! 🏨
+          close-issue-message: >
+            Closing due to inactivity. Feel free to reopen or open a new issue if this
+            is still relevant — no hard feelings. 🏨
+          close-pr-message: >
+            Closing due to inactivity. Feel free to reopen when you're ready to continue. 🏨
