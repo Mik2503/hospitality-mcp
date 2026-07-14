@@ -84,6 +84,9 @@ function makeMockAdapter() {
 
 function makeConfig(enableWrites: boolean): AppConfig {
   return {
+    provider: "apaleo",
+    enableWrites,
+    defaultPropertyId: "BER",
     apaleo: {
       clientId: "id",
       clientSecret: "secret",

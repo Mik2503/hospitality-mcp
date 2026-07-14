@@ -35,7 +35,7 @@ export function createServer(
 
   // Write tools are registered ONLY when the user explicitly enabled writes AND
   // the adapter can perform them. Otherwise they don't exist at all.
-  if (config.apaleo.enableWrites) {
+  if (config.enableWrites) {
     if (isWritable(adapter)) {
       registerWriteTools(server, adapter, config, logger);
     } else {
